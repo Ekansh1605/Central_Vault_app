@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File and Notes App</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-image: url('https://images.unsplash.com/photo-1506784983877-45594efa4cbe?fit=crop&w=1600&q=80');
+            background-size: cover;
+            background-position: center;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            color: #ffffff;
+        }
+        .container {
+            background-color: rgba(255, 255, 255, 0.9);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            max-width: 600px;
+            width: 100%;
+            text-align: center;
+        }
+        h1 {
+            color: #007bff;
+            font-weight: bold;
+        }
+        h2 {
+            color: #28a745;
+        }
+        form {
+            margin-bottom: 20px;
+        }
+        input[type="file"],
+        input[type="datetime-local"],
+        textarea {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        button {
+            background: linear-gradient(90deg, #ff7e5f, #feb47b);
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
+        }
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        li {
+            background-color: #f0f8ff;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+            text-align: left;
+            position: relative;
+        }
+        a {
+            color: #e74c3c;
+            text-decoration: none;
+            position: absolute;
+            right: 10px;
+            top: 15px;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+        .motivating-text {
+            margin-top: 20px;
+            font-style: italic;
+            color: #ff4500;
+            font-size: 1.2em;
+        }
+    </style>
+    <script>
+        function displayFileName(input) {
+            const fileNameElement = document.getElementById('file-name');
+            if (input.files && input.files[0]) {
+                fileNameElement.textContent = `Selected file: ${input.files[0].name}`;
+                fileNameElement.style.display = 'block';
+            }
+        }
+
+        function showUploadMessage() {
+            const fileNameElement = document.getElementById('file-name');
+            const uploadMessageElement = document.getElementById('upload-message');
+            if (fileNameElement.style.display === 'block') {
+                uploadMessageElement.textContent = `${fileNameElement.textContent} uploaded successfully!`;
+                uploadMessageElement.style.display = 'block';
+            }
+        }
+
+        function clearUploadMessage() {
+            document.getElementById('upload-message').style.display = 'none';
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Display a message once the file is uploaded successfully
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.has('uploaded') && urlParams.get('uploaded') === 'true') {
+                document.getElementById('upload-message').style.display = 'block';
+            }
+        });
+
+        // Request permission for browser notifications
+        document.addEventListener('DOMContentLoaded', function () {
+            if (Notification.permission !== "granted") {
+                Notification.requestPermission();
+            }
+        });
+
+        // Function to show a notification
+        function showNotification(message) {
+            if (Notification.permission === "granted") {
+                new Notification(message);
+            }
+        }
+    </script>
+</head>
+<body>
+    <div class="container">
+        <h1>Central Vault</h1>
+
+        <h2>Upload and Add Note</h2>
+        <form action="/add_note" method="post" enctype="multipart/form-data" onsubmit="showUploadMessage()">
+            <input type="file" name="file" required onchange="displayFileName(this)">
+            <p id="file-name" style="color: #007bff; display: none;"></p>
+            <textarea name="note" placeholder="Enter your note here..." required></textarea><br>
+            <input type="datetime-local" name="alarm_time"><br>
+            <input type="email" name="email" placeholder="Enter your email address" required style="margin-bottom: 15px;"><br>
+            <button type="submit" style="color: red;">Upload and Add Note</button><br>
+            <p id="upload-message" style="color: green; display: none;">File uploaded successfully!</p>
+        </form><br>
+            <p style="color: #007bff;">This app allows you to upload files, manage your notes, and set reminders to stay organized and productive.</p>
+        </form>
+
+        <ul>
+            {% for note in notes %}
+            <li style="color: red; padding-bottom: 10px;">
+                <span style="display: inline-block; margin-bottom: 5px;">{{ note.text }} - Reminder set for: {{ note.alarm_time }} - File: {{ note.filename }} - Phone Number: {{ note.phone_number }}</span><br>
+                
+                <script>
+                    // Schedule a browser notification if alarm_time is present
+                    let alarmTime = new Date("{{ note.alarm_time }}");
+                    let currentTime = new Date();
+                    if (alarmTime > currentTime) {
+                        setTimeout(function() {
+                            showNotification("Reminder: {{ note.text }}");
+                        }, alarmTime - currentTime);
+                    }
+                </script>
+                
+                <a href="/delete_note/{{ loop.index0 }}"><i class="fas fa-trash-alt"></i></a>
+            </li>
+            {% endfor %}
+        </ul>
+
+        <div class="motivating-text">
+            "The secret of getting ahead is getting started." - Mark Twain
+        </div>
+    </div>
+</body>
+</html>
