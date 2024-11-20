@@ -1,0 +1,3 @@
+Flask
+Flask-Scss
+apscheduler
